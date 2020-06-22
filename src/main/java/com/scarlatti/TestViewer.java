@@ -1,5 +1,7 @@
 package com.scarlatti;
 
+import com.formdev.flatlaf.FlatIntelliJLaf;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -12,12 +14,14 @@ public class TestViewer extends JFrame {
     private JTextField captureThisWindow;
     private JButton captureButton;
     private JButton ejectButton;
+    private JPasswordField passwordField1;
     private Panel embeddedWindowPanel;
     private JComponent jComponent;
     private JInternalFrame jInternalFrame;
     private Container container;
     private org.eclipse.swt.widgets.Canvas swtCanvas;
-    private WindowCapturer windowCapturer;
+    private SwingWindowCapturer1 windowCapturer;
+//    private SwingWindowCapturer2 windowCapturer;
 
     public TestViewer() {
         setContentPane(contentPane);
@@ -81,7 +85,10 @@ public class TestViewer extends JFrame {
             }
         });
 
-        windowCapturer = new WindowCapturer(embeddedWindowPanel);
+        windowCapturer = new SwingWindowCapturer1(embeddedWindowPanel);
+//        windowCapturer = new SwingWindowCapturer2(embeddedWindowPanel);
+
+        setTitle("Test Capture Window");
 
         pack();
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
@@ -97,7 +104,8 @@ public class TestViewer extends JFrame {
         dispose();
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
+        UIManager.setLookAndFeel(new FlatIntelliJLaf());
         TestViewer dialog = new TestViewer();
         dialog.setVisible(true);
     }
@@ -108,5 +116,19 @@ public class TestViewer extends JFrame {
 
     private void ejectWindow() {
         windowCapturer.ejectWindow();
+    }
+
+    public void setData(TestBean1 data) {
+        captureThisWindow.setText(data.getName());
+    }
+
+    public void getData(TestBean1 data) {
+        data.setName(captureThisWindow.getText());
+    }
+
+    public boolean isModified(TestBean1 data) {
+        if (captureThisWindow.getText() != null ? !captureThisWindow.getText().equals(data.getName()) : data.getName() != null)
+            return true;
+        return false;
     }
 }

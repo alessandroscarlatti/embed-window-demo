@@ -15,12 +15,12 @@ import java.util.Optional;
  * @author Alessandro Scarlatti
  * @since Friday, 6/19/2020
  */
-public class WindowCapturer {
+public class SwingWindowCapturer1 {
 
     private Component embedComponent;
     private Window window;
 
-    public WindowCapturer(Component embedComponent) {
+    public SwingWindowCapturer1(Component embedComponent) {
         this.embedComponent = embedComponent;
     }
 
@@ -53,6 +53,7 @@ public class WindowCapturer {
                 Window window = new Window();
                 window.hWnd = hWnd;
                 window.text = Native.toString(windowText).trim();
+                window.originalStyle = User32.INSTANCE.GetWindowLongPtr(hWnd, WinUser.GWL_STYLE).longValue();
 
                 windows.add(window);
 
@@ -73,8 +74,7 @@ public class WindowCapturer {
 
     private void captureWindow(Window window) {
         WinDef.HWND hWnd = window.hWnd;
-        BaseTSD.LONG_PTR style = User32.INSTANCE.GetWindowLongPtr(hWnd, WinUser.GWL_STYLE);
-        Long styleLong = style.longValue();
+        Long styleLong = window.originalStyle;
         styleLong &= ~WinUser.WS_CAPTION;
         styleLong &= ~WinUser.WS_THICKFRAME;
 
@@ -85,17 +85,17 @@ public class WindowCapturer {
         WinDef.HWND canvasHandle = new WinDef.HWND(canvasPointer);
         User32.INSTANCE.SetParent(hWnd, canvasHandle);
         User32.INSTANCE.SetForegroundWindow(hWnd);
-        boolean setParentSuccess = User32.INSTANCE.SetWindowPos(hWnd , canvasHandle, 0 , 0 , embedComponent.getWidth(), embedComponent.getHeight(), 0);
+        boolean setParentSuccess = User32.INSTANCE.SetWindowPos(hWnd , canvasHandle, 0 , 0 , embedComponent.getWidth(), embedComponent.getHeight(), User32.SWP_ASYNCWINDOWPOS);
         System.out.println("set parent success: " + setParentSuccess);
 
         ComponentListener componentListener = new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent e) {
-                User32.INSTANCE.SetWindowPos(hWnd, new WinDef.HWND(Pointer.NULL), 0, 0, embedComponent.getWidth(), embedComponent.getHeight(), 0);
+                User32.INSTANCE.SetWindowPos(hWnd, new WinDef.HWND(Pointer.NULL), 0, 0, embedComponent.getWidth(), embedComponent.getHeight(), User32.SWP_ASYNCWINDOWPOS);
             }
         };
 
-        User32.INSTANCE.SetWindowPos(hWnd, new WinDef.HWND(Pointer.NULL), 0, 0, embedComponent.getWidth(), embedComponent.getHeight(), 0);
+        User32.INSTANCE.SetWindowPos(hWnd, new WinDef.HWND(Pointer.NULL), 0, 0, embedComponent.getWidth(), embedComponent.getHeight(), User32.SWP_ASYNCWINDOWPOS);
 
         embedComponent.addComponentListener(componentListener);
         window.canvasListener = componentListener;
@@ -103,20 +103,12 @@ public class WindowCapturer {
 
     private void ejectWindow(Window window) {
         WinDef.HWND hWnd = window.hWnd;
-        BaseTSD.LONG_PTR style = User32.INSTANCE.GetWindowLongPtr(hWnd, WinUser.GWL_STYLE);
-        Long styleLong = style.longValue();
-        styleLong |= WinUser.WS_CAPTION;
-        styleLong |= WinUser.WS_THICKFRAME;
-
-        // somehow reset the style
+        Long styleLong = window.originalStyle;
 
         User32.INSTANCE.SetWindowLongPtr(hWnd, WinUser.GWL_STYLE, new Pointer(styleLong));
 
-
-        Pointer canvasPointer = Native.getComponentPointer(embedComponent);
         User32.INSTANCE.SetParent(hWnd, null);
         User32.INSTANCE.SetForegroundWindow(hWnd);
-
 
         // remove embedComponent listener...
         embedComponent.removeComponentListener(window.canvasListener);
@@ -125,6 +117,7 @@ public class WindowCapturer {
     private static class Window {
         String text;
         WinDef.HWND hWnd;
+        Long originalStyle;
         ComponentListener canvasListener;
 
         @Override

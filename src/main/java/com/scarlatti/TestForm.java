@@ -40,13 +40,13 @@ public class TestForm extends JFrame {
             }
         }, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
 
-        setTitle("fake");
+        setTitle("Fake Notepad");
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
     }
 
     private void onOK() {
         // add your code here
-        dispose();
+        System.out.println("waiting");
     }
 
     private void onCancel() {
